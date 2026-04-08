@@ -1,0 +1,129 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "onMatchHeaders": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/api/csv",
+      "regex": "^/api/csv(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/csv(?:/)?$"
+    },
+    {
+      "page": "/api/influx",
+      "regex": "^/api/influx(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/influx(?:/)?$"
+    },
+    {
+      "page": "/api/jetsinter",
+      "regex": "^/api/jetsinter(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/jetsinter(?:/)?$"
+    },
+    {
+      "page": "/api/jetsinter-status",
+      "regex": "^/api/jetsinter\\-status(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/jetsinter\\-status(?:/)?$"
+    },
+    {
+      "page": "/api/python/jetsinter",
+      "regex": "^/api/python/jetsinter(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/python/jetsinter(?:/)?$"
+    },
+    {
+      "page": "/api/python/jetsinterOff",
+      "regex": "^/api/python/jetsinterOff(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/python/jetsinterOff(?:/)?$"
+    },
+    {
+      "page": "/api/python/start",
+      "regex": "^/api/python/start(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/python/start(?:/)?$"
+    },
+    {
+      "page": "/api/python/stop",
+      "regex": "^/api/python/stop(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/python/stop(?:/)?$"
+    },
+    {
+      "page": "/api/python/training",
+      "regex": "^/api/python/training(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/python/training(?:/)?$"
+    },
+    {
+      "page": "/api/recipe",
+      "regex": "^/api/recipe(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/recipe(?:/)?$"
+    },
+    {
+      "page": "/api/update-env",
+      "regex": "^/api/update\\-env(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/update\\-env(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}

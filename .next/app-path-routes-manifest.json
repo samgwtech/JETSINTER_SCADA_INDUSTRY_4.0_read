@@ -1,0 +1,16 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/csv/route": "/api/csv",
+  "/api/influx/route": "/api/influx",
+  "/api/jetsinter-status/route": "/api/jetsinter-status",
+  "/api/jetsinter/route": "/api/jetsinter",
+  "/api/python/jetsinter/route": "/api/python/jetsinter",
+  "/api/python/jetsinterOff/route": "/api/python/jetsinterOff",
+  "/api/python/start/route": "/api/python/start",
+  "/api/python/stop/route": "/api/python/stop",
+  "/api/python/training/route": "/api/python/training",
+  "/api/recipe/route": "/api/recipe",
+  "/api/update-env/route": "/api/update-env",
+  "/page": "/"
+}
