@@ -5,6 +5,7 @@
   "/api/influx/route": "app/api/influx/route.js",
   "/api/jetsinter-status/route": "app/api/jetsinter-status/route.js",
   "/api/jetsinter/route": "app/api/jetsinter/route.js",
+  "/api/plc/route": "app/api/plc/route.js",
   "/api/python/jetsinter/route": "app/api/python/jetsinter/route.js",
   "/api/python/jetsinterOff/route": "app/api/python/jetsinterOff/route.js",
   "/api/python/start/route": "app/api/python/start/route.js",

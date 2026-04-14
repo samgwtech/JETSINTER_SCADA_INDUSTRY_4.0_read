@@ -20,7 +20,7 @@
       "jsx",
       "js"
     ],
-    "poweredByHeader": true,
+    "poweredByHeader": false,
     "compress": true,
     "images": {
       "deviceSizes": [
@@ -106,6 +106,9 @@
       }
     },
     "outputFileTracingRoot": "C:\\Users\\Admin\\OneDrive\\Desktop\\JETSINTER - INDUSTRY 4.0 READY",
+    "allowedDevOrigins": [
+      "192.168.151.202"
+    ],
     "cacheComponents": false,
     "cacheLife": {
       "default": {
@@ -307,6 +310,10 @@
     "turbopack": {
       "root": "C:\\Users\\Admin\\OneDrive\\Desktop\\JETSINTER - INDUSTRY 4.0 READY"
     },
+    "serverExternalPackages": [
+      "fs",
+      "path"
+    ],
     "distDirRoot": ".next"
   },
   "appDir": "C:\\Users\\Admin\\OneDrive\\Desktop\\JETSINTER - INDUSTRY 4.0 READY",

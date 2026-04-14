@@ -60,12 +60,10 @@ export async function POST(req: NextRequest) {
       { index: 220 + i * 4 + 3, value: p.sosta  },
     ]);
 
-    // Scrivi tutte le MD nel PLC in sequenza
-    for (const { index, value } of writes) {
-      await fetch(`${PLC_BASE}/api/set/op?op=MD&index=${index}&val=${value}`, {
-        headers: HEADERS,
-      });
-    }
+    // Scrivi tutte le MD nel PLC in parallelo
+    await Promise.all(writes.map(({ index, value }) =>
+      fetch(`${PLC_BASE}/api/set/op?op=MD&index=${index}&val=${value}`, { headers: HEADERS })
+    ));
 
     // Se save_recipe → salva anche nel JSON
     if (action === "save_recipe") {

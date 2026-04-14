@@ -128,12 +128,10 @@ async function POST(req) {
                     value: p.sosta
                 }
             ]);
-        // Scrivi tutte le MD nel PLC in sequenza
-        for (const { index, value } of writes){
-            await fetch(`${PLC_BASE}/api/set/op?op=MD&index=${index}&val=${value}`, {
+        // Scrivi tutte le MD nel PLC in parallelo
+        await Promise.all(writes.map(({ index, value })=>fetch(`${PLC_BASE}/api/set/op?op=MD&index=${index}&val=${value}`, {
                 headers: HEADERS
-            });
-        }
+            })));
         // Se save_recipe → salva anche nel JSON
         if (action === "save_recipe") {
             const raw = __TURBOPACK__imported__module__$5b$externals$5d2f$fs__$5b$external$5d$__$28$fs$2c$__cjs$29$__["default"].readFileSync(RECIPES_PATH, "utf-8");

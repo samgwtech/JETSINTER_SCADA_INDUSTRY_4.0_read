@@ -66,6 +66,12 @@
       "namedRegex": "^/api/jetsinter\\-status(?:/)?$"
     },
     {
+      "page": "/api/plc",
+      "regex": "^/api/plc(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/plc(?:/)?$"
+    },
+    {
       "page": "/api/python/jetsinter",
       "regex": "^/api/python/jetsinter(?:/)?$",
       "routeKeys": {},

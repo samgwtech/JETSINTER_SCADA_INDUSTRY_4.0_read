@@ -92,6 +92,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../app/api/plc/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/plc">> = Specific
+  const handler = {} as typeof import("../../app/api/plc/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../app/api/python/jetsinter/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/python/jetsinter">> = Specific

@@ -5,6 +5,7 @@
   "/api/influx/route": "/api/influx",
   "/api/jetsinter-status/route": "/api/jetsinter-status",
   "/api/jetsinter/route": "/api/jetsinter",
+  "/api/plc/route": "/api/plc",
   "/api/python/jetsinter/route": "/api/python/jetsinter",
   "/api/python/jetsinterOff/route": "/api/python/jetsinterOff",
   "/api/python/start/route": "/api/python/start",
