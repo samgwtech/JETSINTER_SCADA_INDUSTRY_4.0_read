@@ -14,45 +14,44 @@ __turbopack_context__.s([
     "register",
     ()=>register
 ]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$__$5b$instrumentation$2d$edge$5d$__$28$unsupported__edge__import__$27$fs$272c$__ecmascript$29$__ = __turbopack_context__.i("[project]/ [instrumentation-edge] (unsupported edge import 'fs', ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$__$5b$instrumentation$2d$edge$5d$__$28$unsupported__edge__import__$27$path$272c$__ecmascript$29$__ = __turbopack_context__.i("[project]/ [instrumentation-edge] (unsupported edge import 'path', ecmascript)");
-;
-;
-async function syncJetsinterStatus() {
-    const ip = process.env.IP_ADDRESS || "192.168.151.100";
-    const apiKey = process.env.API_SECRET_KEY || "";
-    const url = `https://${ip}/api/get/data?elm=M(2)`;
-    try {
-        const res = await fetch(url, {
-            headers: {
-                Authorization: `Bearer ${apiKey}`
-            }
-        });
-        if (res.ok) {
-            const data = await res.json();
-            const mMeasurements = data?.OPERANDS?.MSINGLE ?? [];
-            const startBit = mMeasurements.find((m)=>m.INDEX === 2);
-            const status = startBit?.V === 1 ? "1" : "0";
-            if (process.env.JETSINTER_STATUS !== status) {
-                const envPath = __TURBOPACK__imported__module__$5b$project$5d2f$__$5b$instrumentation$2d$edge$5d$__$28$unsupported__edge__import__$27$path$272c$__ecmascript$29$__["default"].join(process.cwd(), ".env");
-                let env = __TURBOPACK__imported__module__$5b$project$5d2f$__$5b$instrumentation$2d$edge$5d$__$28$unsupported__edge__import__$27$fs$272c$__ecmascript$29$__["default"].readFileSync(envPath, "utf-8");
-                env = env.replace(/JETSINTER_STATUS=.*/, `JETSINTER_STATUS=${status}`);
-                __TURBOPACK__imported__module__$5b$project$5d2f$__$5b$instrumentation$2d$edge$5d$__$28$unsupported__edge__import__$27$fs$272c$__ecmascript$29$__["default"].writeFileSync(envPath, env);
-                process.env.JETSINTER_STATUS = status;
-                console.log(`[plc-poll] Jetsinter status updated: ${status === "1" ? "ON" : "OFF"}`);
-            }
-        } else {
-            console.warn(`[plc-poll] PLC status check failed: HTTP ${res.status}`);
-        }
-    } catch (e) {
-        console.warn("[plc-poll] Could not reach PLC to check Jetsinter status:", e);
-    }
-}
 async function register() {
-    // Only run on the Node.js server (not in the Edge runtime)
     if ("TURBOPACK compile-time truthy", 1) return;
     //TURBOPACK unreachable
     ;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = undefined;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const path = undefined;
+    async function syncJetsinterStatus() {
+        const ip = process.env.IP_ADDRESS || "192.168.151.100";
+        const apiKey = process.env.API_SECRET_KEY || "";
+        const url = `https://${ip}/api/get/data?elm=M(2)`;
+        try {
+            const res = await fetch(url, {
+                headers: {
+                    Authorization: `Bearer ${apiKey}`
+                }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const mMeasurements = data?.OPERANDS?.MSINGLE ?? [];
+                const startBit = mMeasurements.find((m)=>m.INDEX === 2);
+                const status = startBit?.V === 1 ? "1" : "0";
+                if (process.env.JETSINTER_STATUS !== status) {
+                    const envPath = path.join(process.cwd(), ".env");
+                    let env = fs.readFileSync(envPath, "utf-8");
+                    env = env.replace(/JETSINTER_STATUS=.*/, `JETSINTER_STATUS=${status}`);
+                    fs.writeFileSync(envPath, env);
+                    process.env.JETSINTER_STATUS = status;
+                    console.log(`[plc-poll] Jetsinter status updated: ${status === "1" ? "ON" : "OFF"}`);
+                }
+            } else {
+                console.warn(`[plc-poll] PLC status check failed: HTTP ${res.status}`);
+            }
+        } catch (e) {
+            console.warn("[plc-poll] Could not reach PLC to check Jetsinter status:", e);
+        }
+    }
 }
 }),
 "[project]/node_modules/next/dist/esm/build/templates/edge-wrapper.js { MODULE => \"[project]/instrumentation.ts [instrumentation-edge] (ecmascript)\" } [instrumentation-edge] (ecmascript)", ((__turbopack_context__, module, exports) => {

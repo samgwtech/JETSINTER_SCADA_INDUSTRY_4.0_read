@@ -1,298 +1,221 @@
 "use client";
+import { useState, useEffect } from "react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
-import { logger } from "@/lib/clientLogger";
+type Phase   = { t_ini: number; t_fin: number; vel: number; sosta: number };
+type Recipes = { default: { name: string; phases: Phase[] }; custom: { name: string; phases: Phase[] } | null };
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import DashboardLayout from "@/components/ui/DashboardLayout";
-import ChartComponent from "@/components/ui/ChartComponent";
-import { exit } from "node:process";
-
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // Disable TLS cert validation globally (use with caution!)
-
-type CsvApiResponse = {
-  columns: (number | string)[][];
-};
-
-function toTimeLabel(sec: number) {
-  const s = Math.max(0, Math.floor(sec));
-  const mm = Math.floor(s / 60);
-  const ss = s % 60;
-  return `${mm}:${String(ss).padStart(2, "0")}`;
-}
-
-
-function num(v: number | string) {
-  const n = typeof v === "string" ? Number(v) : v;
-  return Number.isFinite(n) ? n : 0;
-}
-
-function getAt(arr: number[], idx: number, fallback = 0) {
-  return idx >= 0 && idx < arr.length ? arr[idx] : fallback;
-}
-
-function avg(arr: number[]) {
-  if (!arr.length) return 0;
-  let s = 0;
-  for (const v of arr) s += v;
-  return s / arr.length;
+function decodeMD(b64: string, start: number): Record<number, number> {
+  const raw    = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const result: Record<number, number> = {};
+  for (let i = 0; i < raw.length / 4; i++) {
+    const view = new DataView(raw.buffer, i * 4, 4);
+    result[start + i] = view.getInt32(0, true);
+  }
+  return result;
 }
 
 export default function Home() {
-  logger.system("Dashboard loaded");
-  const [isRunning, setIsRunning] = useState(false);
-  const [mode, setMode] = useState<"real" | "training" | null>(null);
-  const [chillerOn, setChillerOn] = useState(false);
-  const [chillerLoading, setChillerLoading] = useState(false);
-  const [chillerTurnOff, setChillerTurnOff] = useState(false);
-  const [chillerStartLoading, setJetsinterStartLoading] = useState(false);
-  const [isJetsinterOn, setIsJetsinterOn] = useState(false);
+  const [start,   setStart]   = useState(0);
+  const [ready,   setReady]   = useState(false);
+  const [live,    setLive]    = useState({ FASE: 0, TEMP_C: 0, T_TARGET: 0, PWM_PERCENT: 0, MINUTI_TOTALI: 0 });
+  const [recipes, setRecipes] = useState<Recipes | null>(null);
+  const [phases,  setPhases]  = useState<Phase[]>([]);
+  const [recipeOpen, setRecipeOpen] = useState(false);
+  const [chartData, setChartData] = useState<{ t: number; temp: number; target: number }[]>([]);
 
+  // Stato START
   useEffect(() => {
-    fetch("/api/jetsinter-status")
-      .then((r) => r.json())
-      .then((d) => setIsJetsinterOn(d.on === true))
-      .catch(() => {});
+    fetch("/api/plc?op=M&index=2")
+      .then(r => r.json())
+      .then(data => setStart(data?.OPERANDS?.MSINGLE?.[0]?.V ?? 0))
+      .catch(() => {})
+      .finally(() => setReady(true));
   }, []);
 
-  const [recipeValue, setRecipeValue] = useState(' ');
-  const [recipeAddress, setRecipeAddress] = useState('1');
-
-  const handleSetRecipe = async () => {
-    await fetch("/api/update-env", {
-      method: "POST",
-      body: JSON.stringify({
-        index: recipeAddress,
-        value: recipeValue})
-    });
-    logger.mw(`Recipe set to ${recipeValue} at address ${recipeAddress}`);
-    console.log(`Recipe set to ${recipeValue} at address ${recipeAddress}`);
-    await fetch('/api/recipe', { method: 'POST' });
-    setRecipeValue(' ');
-    logger.mw(`Recipe value updated`);
-    console.log(`Recipe value updated`);
-  }
-
-  const handleJetsinterTurnOff = async () => {
-    logger.jetsinter(`Turning off chiller...`);
-    setChillerTurnOff(true);
-    try {
-      const res = await fetch('/api/python/jetsinterOff', { method: 'POST' });
-      const data = await res.json();
-      console.log(data.success ? 'Jetsinter Stopped!' : data.error);
-      logger.jetsinter(`Jetsinter turned off: ${data.success ? 'Success' : 'Failed'}`);
-      if (data.success) setIsJetsinterOn(false);
-    } catch (e) {
-      console.error(e);
-    }
-    setChillerTurnOff(false);
-  };
-
-  const handleJetsinterClick = async () => {
-    setJetsinterStartLoading(true);
-    try {
-      alert("Per accendere il Jetsinter, è necessario farlo manualmente dal dispositivo. Questa funzionalità è disabilitata per motivi di sicurezza.");
-      exit(1);
-      const res = await fetch('/api/python/jetsinter', { method: 'POST' });
-      const data = await res.json();
-      console.log(data.success ? 'Jetsinter started!' : data.error);
-      if (data.success) setIsJetsinterOn(true);
-    } catch (e) {
-      console.error(e);
-    }
-    setJetsinterStartLoading(false);
-  };
-
-  const handleJetsinterToggle = async () => {
-    if (isJetsinterOn) {
-      await handleJetsinterTurnOff();
-    } else {
-      await handleJetsinterClick();
-    }
-  };
-
-  const startMeasurement = async () => {
-    logger.system(`Starting measurement...`);
-    try {
-      await fetch("/api/python/start", { method: "POST" });
-      setIsRunning(true);
-      setMode("real");
-    } catch (e) {
-      console.error("Failed to start", e);
-    }
-  };
-
-  const stopMeasurement = async () => {
-    logger.system(`Stopping measurement...`);
-    try {
-      await fetch("/api/python/stop", { method: "POST" });
-      setIsRunning(false);
-      setMode(null);
-    } catch (e) {
-      console.error("Failed to stop", e);
-    }
-  };
-
-  const startTraining = async () => {
-    logger.system(`Starting training mode...`);
-    try {
-      await fetch("/api/python/training", { method: "POST" });
-      setIsRunning(true);
-      setMode("training");
-    } catch (e) {
-      logger.error(`Failed to start training mode: ${e instanceof Error ? e.message : 'Unknown error'}`);
-      console.error("Failed to start training", e);
-    }
-  };
-
-  const [hoverIndex, setHoverIndex] = useState<number>(-1);
-  const [activeChart, setActiveChart] = useState<number>(0);
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Data
-  const [timeLabels, setTimeLabels] = useState<string[]>([]);
-  const [pressureData, setPressureData] = useState<number[]>([]);
-
-  // Cassetti
-  const [temperatureData, setTemperatureData] = useState<number[]>([]);
-  const [microwavePowerData, setMwPowerData] = useState<number[]>([]);
-
-  const fetchCsv = useCallback(async () => {
-    setError(null);
-    try {
-      const res = await fetch("/api/csv", { cache: "no-store" });
-      if (!res.ok) throw new Error(`CSV API failed: ${res.status}`);
-      const data = (await res.json()) as CsvApiResponse;
-
-      const cols = data.columns;
-
-      const secCol = (cols[0] ?? []).map((v) => num(v));
-      const temperatureDataCol = (cols[2] ?? []).map((v) => num(v));
-      const mwPowerCol = (cols[3] ?? []).map((v) => num(v));
-
-      logger.system(`CSV data fetched successfully with ${secCol.length} entries`);
-      logger.system(`Sample data - Time: ${getAt(secCol, 0)}s, Temperature: ${getAt(temperatureDataCol, 0)}°C, Microwave Power: ${getAt(mwPowerCol, 0)}%`);
-      logger.system(`CSV columns - Time: ${secCol.length} entries, Temperature: ${temperatureDataCol.length} entries, Microwave Power: ${mwPowerCol.length} entries`);
-
-      setTimeLabels(secCol.map(toTimeLabel));
-      setTemperatureData(temperatureDataCol);
-      setMwPowerData(mwPowerCol);
-    } catch (e) {
-      logger.error(`Error fetching CSV data: ${e instanceof Error ? e.message : 'Unknown error'}`);
-      const msg = e instanceof Error ? e.message : "Unknown fetch error";
-      setError(msg);
-      logger.error(`Failed to fetch CSV data: ${msg}`);
-      console.error("Data fetch error 🤕", e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Fetch once on mount
+  // Polling live
   useEffect(() => {
-    logger.system(`Fetching initial CSV data...`);
-    fetchCsv();
-  }, [fetchCsv]);
+    const poll = async () => {
+      try {
+        const [r1, r2] = await Promise.all([
+          fetch("/api/plc?op=MD&index=201,214").then(r => r.json()),
+          fetch("/api/plc?op=MB&index=200").then(r => r.json()),
+        ]);
+        const range = r1?.OPERANDS?.MDRANGE?.[0];
+        if (range) {
+          const vals = decodeMD(range.V, range.START);
+          setLive(prev => ({
+            ...prev,
+            TEMP_C:        vals[207] ?? 0,
+            T_TARGET:      vals[209] ?? 0,
+            PWM_PERCENT:   vals[210] ?? 0,
+            MINUTI_TOTALI: vals[212] ?? 0,
+          }));
 
-  // Polling for CSV updates
-  useEffect(() => {
-    const id = setInterval(fetchCsv, 2500);
+          setChartData(prev => {
+          const next = [...prev, { t: prev.length, temp: vals[207] ?? 0, target: vals[209] ?? 0 }];
+          return next.slice(-120);
+        });
+        }
+        const fase = r2?.OPERANDS?.MBSINGLE?.[0]?.V ?? 0;
+        setLive(prev => ({ ...prev, FASE: fase }));
+      } catch {}
+    };
+    poll();
+    const id = setInterval(poll, 2000);
     return () => clearInterval(id);
-  }, [fetchCsv]);
+  }, []);
 
-const charts = useMemo(
-  () => [
-    { name: "", max: 1800, unit: "Temperatura (°C)", data: temperatureData, color: "rgba(150, 70, 54, 0.5)" },
-//    { name: "", max: 4095, unit: "Potenza Microonde (%)", data: microwavePowerData, color: "rgba(98,131,149,0.5)" },
-  ],
-  [temperatureData, microwavePowerData]
-);
+  // Carica ricette
+  useEffect(() => {
+    fetch("/api/plc?op=recipes")
+      .then(r => r.json())
+      .then((data: Recipes) => {
+        setRecipes(data);
+        setPhases(data.custom?.phases ?? data.default.phases);
+      });
+  }, []);
+
+  const toggleStart = async () => {
+    const newValue = start === 0 ? 1 : 0;
+    await fetch("/api/plc", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ op: "M", index: 2, value: newValue }),
+    });
+    setStart(newValue);
+  };
+
+  const updatePlc = async () => {
+    await fetch("/api/plc", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update_recipe", phases }),
+    });
+  };
+
+  const saveAndUpdate = async () => {
+    await fetch("/api/plc", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "save_recipe", phases }),
+    });
+    const data = await fetch("/api/plc?op=recipes").then(r => r.json());
+    setRecipes(data);
+  };
 
   return (
-    <DashboardLayout
-      sidebar={
-        <div className="flex flex-col gap-3 px-3 py-4 text-sm">
-          {/* Section label */}
-          <p className="text-xs font-semibold tracking-widest uppercase text-muted-foreground px-1 pb-1 border-b border-border">
-            Controls
-          </p>
+    <main className="p-6 flex flex-col gap-6">
+      <button
+        onClick={toggleStart}
+        disabled={!ready}
+        suppressHydrationWarning
+        className={`w-32 px-4 py-2 rounded font-medium transition-all disabled:opacity-40 ${
+          start === 1
+            ? "bg-red-500/20 text-red-400 border border-red-500/40"
+            : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+        }`}>
+        {!ready ? "..." : start === 1 ? "STOP" : "START"}
+      </button>
 
-          {/* Jetsinter toggle */}
-          <button
-            onClick={handleJetsinterToggle}
-            disabled={chillerStartLoading || chillerTurnOff}
-            className={`w-full px-3 py-2 rounded-md text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed
-              ${isJetsinterOn
-                ? "bg-destructive/20 text-red-400 border border-destructive/40 hover:bg-destructive/30"
-                : "bg-primary/10 text-cyan-300 border border-primary/30 hover:bg-primary/20"
-              }`}>
-            {(chillerStartLoading || chillerTurnOff) ? "..." : isJetsinterOn ? "Spegni Jetsinter" : "Accendi Jetsinter"}
-          </button>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        {[
+          { label: "Temperatura", value: `${live.TEMP_C} °C`     },
+          { label: "Target",      value: `${live.T_TARGET} °C`   },
+          { label: "Potenza MW",  value: `${live.PWM_PERCENT} %` },
+          { label: "Minuti",      value: `${live.MINUTI_TOTALI}` },
+          { label: "Fase",        value: `${live.FASE}`          },
+        ].map(({ label, value }) => (
+          <div key={label} className="rounded-lg border border-border bg-card p-3">
+            <p className="text-xs text-muted-foreground mb-1">{label}</p>
+            <p className="text-lg font-semibold">{value}</p>
+          </div>
+        ))}
+      </div>
 
-          {/* Measurement controls */}
-          <div className="flex flex-col gap-2">
+      <div className="rounded-lg border border-border bg-card p-4 h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData}>
+            <XAxis dataKey="t" hide />
+            <YAxis domain={[0, 1800]} width={40} />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="temp"   name="Temperatura (°C)" stroke="#f87171" dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey="target" name="Target (°C)"      stroke="#34d399" dot={false} isAnimationActive={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {phases.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
             <button
-              onClick={startMeasurement}
-              className="w-full px-3 py-2 rounded-md text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all">
-              Inizia Misurazione
+              onClick={() => setRecipeOpen(o => !o)}
+              className="text-sm font-semibold flex items-center gap-2">
+              Ricetta
+              <span className="text-muted-foreground">{recipeOpen ? "▲" : "▼"}</span>
             </button>
-            <button
-              onClick={stopMeasurement}
-              className="w-full px-3 py-2 rounded-md text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-all">
-              Stop Measurement
-            </button>
-            <button
-              onClick={startTraining}
-              className="w-full px-3 py-2 rounded-md text-sm font-medium bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 transition-all">
-              Training Mode
-            </button>
+            {recipes?.custom && (
+              <button onClick={() => setPhases(recipes.default.phases)} className="text-xs text-muted-foreground underline">
+                Carica default
+              </button>
+            )}
+            {recipes?.custom && (
+              <button onClick={() => setPhases(recipes.custom!.phases)} className="text-xs text-muted-foreground underline">
+                Carica custom
+              </button>
+            )}
           </div>
 
-          {/* Recipe setter */}
-          <div className="flex flex-col gap-2 pt-2 border-t border-border">
-            <p className="text-xs font-semibold tracking-widest uppercase text-muted-foreground px-1">
-              Recipe
-            </p>
-            <input
-              type="number"
-              placeholder="MW Address (246)"
-              value={recipeAddress}
-              onChange={(e) => setRecipeAddress(e.target.value)}
-              className="w-full bg-input border border-border rounded-md px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            />
-            <input
-              type="number"
-              placeholder="Insert value"
-              value={recipeValue}
-              onChange={(e) => setRecipeValue(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSetRecipe()}
-              className="w-full bg-input border border-border rounded-md px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            />
-            <button
-              onClick={handleSetRecipe}
-              className="w-full px-3 py-2 rounded-md text-sm font-medium bg-primary/10 text-cyan-300 border border-primary/30 hover:bg-primary/20 transition-all">
-              Set Recipe
-            </button>
-          </div>
+          {recipeOpen && (
+            <>
+              <div className="overflow-x-auto">
+                <table className="text-sm w-full border-collapse">
+                  <thead>
+                    <tr className="text-muted-foreground text-xs">
+                      <th className="text-left p-2">Fase</th>
+                      <th className="text-left p-2">T ini (°C)</th>
+                      <th className="text-left p-2">T fin (°C)</th>
+                      <th className="text-left p-2">Vel (°C/min)</th>
+                      <th className="text-left p-2">Sosta (min)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {phases.map((p, i) => (
+                      <tr key={i} className="border-t border-border">
+                        <td className="p-2 text-muted-foreground">{i + 1}</td>
+                        {(["t_ini", "t_fin", "vel", "sosta"] as (keyof Phase)[]).map(field => (
+                          <td key={field} className="p-2">
+                            <input
+                              type="number"
+                              value={p[field]}
+                              onChange={e => {
+                                const updated = [...phases];
+                                updated[i] = { ...updated[i], [field]: Number(e.target.value) };
+                                setPhases(updated);
+                              }}
+                              className="w-20 bg-input border border-border rounded px-2 py-1 text-sm"
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex gap-2">
+                <button onClick={updatePlc} className="px-4 py-2 rounded text-sm font-medium bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                  Aggiorna
+                </button>
+                <button onClick={saveAndUpdate} className="px-4 py-2 rounded text-sm font-medium bg-primary/20 text-cyan-300 border border-primary/40">
+                  Salva come custom e aggiorna
+                </button>
+              </div>
+            </>
+          )}
         </div>
-      }>
-        <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${charts.length}, minmax(0, 1fr))` }}>
-          {charts.map((ch, i) => (
-            <div key={i} className="rounded-xl border border-border bg-card p-2">
-              <ChartComponent
-                name_measurement={ch.name}
-                max_x_axis={ch.max}
-                unit={ch.unit}
-                unitOfTime="sec"
-                labels={timeLabels}
-                data={ch.data}
-                onHoverIndex={setHoverIndex}
-                color={ch.color}
-              />
-            </div>
-          ))}
-        </div>
-    </DashboardLayout>
+      )}
+    </main>
   );
 }

@@ -1,0 +1,96 @@
+{
+  "default": {
+    "name": "Maverik SHT",
+    "phases": [
+      {
+        "t_ini": 20,
+        "t_fin": 800,
+        "vel": 23,
+        "sosta": 10
+      },
+      {
+        "t_ini": 800,
+        "t_fin": 1000,
+        "vel": 17,
+        "sosta": 0
+      },
+      {
+        "t_ini": 1000,
+        "t_fin": 1200,
+        "vel": 10,
+        "sosta": 10
+      },
+      {
+        "t_ini": 1200,
+        "t_fin": 1300,
+        "vel": 5,
+        "sosta": 0
+      },
+      {
+        "t_ini": 1300,
+        "t_fin": 1400,
+        "vel": 4,
+        "sosta": 0
+      },
+      {
+        "t_ini": 1400,
+        "t_fin": 1500,
+        "vel": 4,
+        "sosta": 50
+      },
+      {
+        "t_ini": 1500,
+        "t_fin": 0,
+        "vel": 0,
+        "sosta": 0
+      }
+    ]
+  },
+  "custom": {
+    "name": "Custom",
+    "phases": [
+      {
+        "t_ini": 69,
+        "t_fin": 800,
+        "vel": 23,
+        "sosta": 10
+      },
+      {
+        "t_ini": 800,
+        "t_fin": 1000,
+        "vel": 17,
+        "sosta": 0
+      },
+      {
+        "t_ini": 1000,
+        "t_fin": 1200,
+        "vel": 10,
+        "sosta": 10
+      },
+      {
+        "t_ini": 1200,
+        "t_fin": 1300,
+        "vel": 5,
+        "sosta": 0
+      },
+      {
+        "t_ini": 1300,
+        "t_fin": 1400,
+        "vel": 4,
+        "sosta": 0
+      },
+      {
+        "t_ini": 1400,
+        "t_fin": 1500,
+        "vel": 4,
+        "sosta": 50
+      },
+      {
+        "t_ini": 1500,
+        "t_fin": 0,
+        "vel": 0,
+        "sosta": 0
+      }
+    ]
+  }
+}

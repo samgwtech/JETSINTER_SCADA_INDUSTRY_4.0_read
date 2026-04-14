@@ -110,7 +110,17 @@ file_name  = start_time.strftime("csv/%Y-%m-%d_%H-%M-%S_ZIRCONIA_SINTERIZATION.c
 
 with open(file_name, mode='w', newline='') as file:
     writer = csv.writer(file)
-    writer.writerow(["ELAPSED_MINUTES", "MACHINE_STATE", "TEMPERATURE", "PWM_PERCENT"])
+    # CSV header
+    writer.writerow([
+        "START",
+        "ELAPSED_MINUTES",
+        "FASE",
+        "TEMP_C",
+        "T_INI",
+        "T_FIN",
+        "VELOCITA_NECESSARIA",
+        "SOSTA_MIN",
+    ])
 
 with open("csv/LATEST.txt", mode='w') as f:
     f.write(file_name)
@@ -169,11 +179,16 @@ while (datetime.now() - start_time).total_seconds() < DURATION_OF_MEASUREMENT:
             # CSV
             with open(file_name, mode='a', newline='') as file:
                 writer = csv.writer(file)
+                # CSV data row
                 writer.writerow([
-                    readings.get("MINUTI_TOTALI"),
                     readings.get("START"),
+                    readings.get("MINUTI_TOTALI"),
+                    readings.get("FASE"),
                     readings.get("TEMP_C"),
-                    readings.get("PWM_PERCENT"),
+                    readings.get("T_INI"),
+                    readings.get("T_FIN"),
+                    readings.get("VELOCITA_NECESSARIA"),
+                    readings.get("SOSTA_MIN"),
                 ])
             print(f"{current_time_str} -> Data logged to CSV successfully")
 

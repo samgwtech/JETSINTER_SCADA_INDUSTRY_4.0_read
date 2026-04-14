@@ -1,1 +1,4 @@
-{}
+{
+  "/api/plc/route": "app/api/plc/route.js",
+  "/page": "app/page.js"
+}
