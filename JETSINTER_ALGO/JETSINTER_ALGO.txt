@@ -1,0 +1,221 @@
+(* ============================================
+   JETSINTER - Controllo forno sinterizzazione
+   ============================================
+   VARIABILI BIT (M1-M199):
+   M01   : Flag stazionamento attivo
+   M02   : Sistema in RUN (set da operatore)
+   M03   : Reset valori default ricetta
+   M10   : Trigger caricamento fase (impulso 1 ciclo)
+   M11   : Supporto per generare impulso su M10
+   M12   : Impulso ogni minuto per stazionamento
+   M13   : Impulso ogni minuto per rampa temperatura
+   VARIABILI NUMERICHE (MB/MD da 200+):
+   MB200 : Fase corrente (1-7) del ciclo termico
+   MD201 : SV → PWM (0-4095)
+   MD202 : T_iniziale fase corrente
+   MD203 : T_finale fase corrente
+   MD204 : Velocità °C/min fase corrente
+   MD205 : Stazionamento in minuti fase corrente
+   MD206 : Errore temperatura (T_TARGET - TEMP_C)
+   MD207 : Temperatura attuale in °C (convertita da IA1)
+   MD208 : Minuti trascorsi in stazionamento
+   MD209 : Setpoint mobile (rampa temperatura)
+   MD210 : Potenza magnetron in % (0-100)
+   MD211 : Minuti trascorsi nella fase corrente
+   MD212 : Minuti totali dall'avvio del ciclo
+   MD213 : Temperatura al minuto precedente
+   MD214 : Velocità di riscaldamento effettiva (°C/min)
+   PARAMETRI RICETTA (retentivi MD220-MD247):
+   MD220 : Fase 1 T_iniziale  |  MD221 : Fase 1 T_finale
+   MD222 : Fase 1 Velocità    |  MD223 : Fase 1 Stazionamento
+   MD224 : Fase 2 T_iniziale  |  MD225 : Fase 2 T_finale
+   MD226 : Fase 2 Velocità    |  MD227 : Fase 2 Stazionamento
+   MD228 : Fase 3 T_iniziale  |  MD229 : Fase 3 T_finale
+   MD230 : Fase 3 Velocità    |  MD231 : Fase 3 Stazionamento
+   MD232 : Fase 4 T_iniziale  |  MD233 : Fase 4 T_finale
+   MD234 : Fase 4 Velocità    |  MD235 : Fase 4 Stazionamento
+   MD236 : Fase 5 T_iniziale  |  MD237 : Fase 5 T_finale
+   MD238 : Fase 5 Velocità    |  MD239 : Fase 5 Stazionamento
+   MD240 : Fase 6 T_iniziale  |  MD241 : Fase 6 T_finale
+   MD242 : Fase 6 Velocità    |  MD243 : Fase 6 Stazionamento
+   MD244 : Fase 7 T_iniziale  |  MD245 : Fase 7 T_finale
+   MD246 : Fase 7 Velocità    |  MD247 : Fase 7 Stazionamento
+   INGRESSI/USCITE:
+   IA1   : Temperatura attuale (0-4095 = 0-1800°C)
+   PW01  : Blocco PWM su Q01, PD=12000ms
+*)
+(* ============================================
+   SYMBOLIC NAMES - associare manualmente
+   ============================================
+   M01   -> SOSTA_ATTIVA
+   M02   -> START
+   M03   -> RESET_DEFAULT
+   M10   -> TRIG_FASE
+   M11   -> TRIG_MEM
+   M12   -> TICK_MIN
+   M13   -> TICK_RAMPA
+   MB200 -> FASE
+   MD201 -> PWM_SV
+   MD202 -> T_INI
+   MD203 -> T_FIN
+   MD204 -> VELOCITA
+   MD205 -> SOSTA_MIN
+   MD206 -> ERRORE_T
+   MD207 -> TEMP_C
+   MD208 -> MINUTI_SOSTA
+   MD209 -> T_TARGET
+   MD210 -> PWM_PERCENT
+   MD211 -> MINUTI_FASE
+   MD212 -> MINUTI_TOTALI
+   MD213 -> TEMP_PREC
+   MD214 -> VEL_REALE
+   MD220 -> F1_TINI  |  MD221 -> F1_TFIN  |  MD222 -> F1_VEL  |  MD223 -> F1_SOSTA
+   MD224 -> F2_TINI  |  MD225 -> F2_TFIN  |  MD226 -> F2_VEL  |  MD227 -> F2_SOSTA
+   MD228 -> F3_TINI  |  MD229 -> F3_TFIN  |  MD230 -> F3_VEL  |  MD231 -> F3_SOSTA
+   MD232 -> F4_TINI  |  MD233 -> F4_TFIN  |  MD234 -> F4_VEL  |  MD235 -> F4_SOSTA
+   MD236 -> F5_TINI  |  MD237 -> F5_TFIN  |  MD238 -> F5_VEL  |  MD239 -> F5_SOSTA
+   MD240 -> F6_TINI  |  MD241 -> F6_TFIN  |  MD242 -> F6_VEL  |  MD243 -> F6_SOSTA
+   MD244 -> F7_TINI  |  MD245 -> F7_TFIN  |  MD246 -> F7_VEL  |  MD247 -> F7_SOSTA
+   IA1   -> TEMP_PV
+*)
+
+(* === 0. INIZIALIZZAZIONE DEFAULTS === *)
+IF F1_TINI = 0 OR RESET_DEFAULT THEN
+    F1_TINI := 20;    F1_TFIN := 800;   F1_VEL := 23;  F1_SOSTA := 10;
+    F2_TINI := 800;   F2_TFIN := 1000;  F2_VEL := 17;  F2_SOSTA := 0;
+    F3_TINI := 1000;  F3_TFIN := 1200;  F3_VEL := 10;  F3_SOSTA := 10;
+    F4_TINI := 1200;  F4_TFIN := 1300;  F4_VEL := 5;   F4_SOSTA := 0;
+    F5_TINI := 1300;  F5_TFIN := 1400;  F5_VEL := 4;   F5_SOSTA := 0;
+    F6_TINI := 1400;  F6_TFIN := 1500;  F6_VEL := 4;   F6_SOSTA := 50;
+    F7_TINI := 1500;  F7_TFIN := 0;     F7_VEL := 0;   F7_SOSTA := 0;
+    RESET_DEFAULT := FALSE;
+END_IF;
+
+(* === LETTURA TEMPERATURA — sempre attiva, anche senza START ===
+   Spostata fuori dall'IF START per aggiornare TEMP_C
+   continuamente e mostrare la temperatura reale nella WebVisu
+   anche quando il ciclo non è avviato. *)
+  (* SENSORE HA SCALA 650C - 1800C*)
+(*TEMP_C := (IA1 * 1800) / 4095;*)
+TEMP_C := 650+(IA1*(1800-650)/4095)*K_CAL;
+K_CAL :=1530/1470;
+
+(* === START: inizializzazione al primo avvio === *)
+IF START AND FASE = 0 THEN
+    FASE      := 1;
+    TRIG_FASE := TRUE;
+END_IF;
+
+(* === 1. CARICAMENTO PARAMETRI FASE === *)
+IF TRIG_FASE AND TRIG_MEM THEN
+    TRIG_FASE := FALSE;
+    TRIG_MEM  := FALSE;
+ELSIF TRIG_FASE THEN
+    TRIG_MEM    := TRUE;
+    MINUTI_FASE := 0;
+    TEMP_PREC   := TEMP_C;
+    CASE FASE OF
+        1: T_INI:=F1_TINI; T_FIN:=F1_TFIN; VELOCITA:=F1_VEL; SOSTA_MIN:=F1_SOSTA;
+        2: T_INI:=F2_TINI; T_FIN:=F2_TFIN; VELOCITA:=F2_VEL; SOSTA_MIN:=F2_SOSTA;
+        3: T_INI:=F3_TINI; T_FIN:=F3_TFIN; VELOCITA:=F3_VEL; SOSTA_MIN:=F3_SOSTA;
+        4: T_INI:=F4_TINI; T_FIN:=F4_TFIN; VELOCITA:=F4_VEL; SOSTA_MIN:=F4_SOSTA;
+        5: T_INI:=F5_TINI; T_FIN:=F5_TFIN; VELOCITA:=F5_VEL; SOSTA_MIN:=F5_SOSTA;
+        6: T_INI:=F6_TINI; T_FIN:=F6_TFIN; VELOCITA:=F6_VEL; SOSTA_MIN:=F6_SOSTA;
+        7: T_INI:=F7_TINI; T_FIN:=F7_TFIN; VELOCITA:=F7_VEL; SOSTA_MIN:=F7_SOSTA;
+    END_CASE;
+    T_TARGET := T_INI;
+END_IF;
+
+(* === 2. RAMPA TEMPERATURA === *)
+T02(
+    EN := START AND NOT SOSTA_ATTIVA,
+    RE := TICK_RAMPA,
+    I1 := T#0h_1m,
+    Q1 => TICK_RAMPA
+);
+
+IF TICK_RAMPA THEN
+    T_TARGET := T_TARGET + VELOCITA;
+    IF T_TARGET > T_FIN THEN
+        T_TARGET := T_FIN;
+    END_IF;
+END_IF;
+
+(*PROPORZIONALE BENE CON INVERTER, NON BENE CON MAGNETRON NORMALE *)
+
+(* === 3. CONTROLLO PWM === *)
+IF START THEN
+    ERRORE_T := T_TARGET - TEMP_C;
+    IF ERRORE_T > 0 THEN
+        PWM_SV := 4095;
+    ELSE
+        PWM_SV := 0;
+    END_IF;
+ELSE
+    PWM_SV := 0;
+END_IF;
+
+(* Potenza in percentuale *)
+PWM_PERCENT := (PWM_SV * 100) / 4095;
+
+(* === BLOCCO PWM === *)
+PW01(
+    EN := START,
+    SV := PWM_SV,
+    PD := 12000,
+    ME := 300
+);
+
+(* === CONTATORI TEMPO === *)
+IF TICK_RAMPA OR TICK_MIN THEN
+    MINUTI_FASE   := MINUTI_FASE + 1;
+    MINUTI_TOTALI := MINUTI_TOTALI + 1;
+END_IF;
+
+(* === VELOCITA' RISCALDAMENTO EFFETTIVA === *)
+IF TICK_RAMPA OR TICK_MIN THEN
+    VEL_REALE := TEMP_C - TEMP_PREC;
+    TEMP_PREC := TEMP_C;
+END_IF;
+
+(* === 4. STAZIONAMENTO E AVANZAMENTO FASE === *)
+T01(
+    EN := SOSTA_ATTIVA,
+    RE := TICK_MIN,
+    I1 := T#0h_1m,
+    Q1 => TICK_MIN
+);
+
+IF TICK_MIN THEN
+    MINUTI_SOSTA := MINUTI_SOSTA + 1;
+END_IF;
+
+IF START AND TEMP_C >= T_FIN AND NOT SOSTA_ATTIVA THEN
+    IF SOSTA_MIN = 0 THEN
+        FASE         := FASE + 1;
+        MINUTI_SOSTA := 0;
+        TRIG_FASE    := TRUE;
+    ELSE
+        SOSTA_ATTIVA := TRUE;
+        MINUTI_SOSTA := 0;
+    END_IF;
+END_IF;
+
+IF SOSTA_ATTIVA AND MINUTI_SOSTA >= SOSTA_MIN THEN
+    SOSTA_ATTIVA := FALSE;
+    MINUTI_SOSTA := 0;
+    FASE         := FASE + 1;
+    TRIG_FASE    := TRUE;
+END_IF;
+
+IF FASE >= 7 THEN
+    START         := FALSE;
+    FASE          := 0;
+    SOSTA_ATTIVA  := FALSE;
+    MINUTI_SOSTA  := 0;
+    MINUTI_FASE   := 0;
+    MINUTI_TOTALI := 0;
+    PWM_SV        := 0;
+    VEL_REALE     := 0;
+    TEMP_PREC     := 0;
+END_IF;
