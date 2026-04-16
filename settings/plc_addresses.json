@@ -1,77 +1,76 @@
 {
   "BIT_MARKERS": {
-    "SOSTA_ATTIVA":"M01",
-    "START":"M02",
-    "RESET_DEFAULT":"M03",
-    "TRIG_FASE":"M10",
-    "TRIG_MEM":"M11",
-    "TICK_MIN":"M12",
-    "TICK_RAMPA":"M13"
+    "SOSTA_ATTIVA":      "M01",
+    "START":             "M02",
+    "RESET_DEFAULT":     "M03",
+    "TRANSFORMER_MODE":  "M04",
+    "ALLARME_TIMEOUT":   "M05",
+    "TRIG_FASE":         "M10",
+    "TRIG_MEM":          "M11",
+    "TICK_MIN":          "M12",
+    "TICK_RAMPA":        "M13"
   },
 
   "RUNTIME_VARS": {
-    "FASE":"MB200",
-    "PWM_SV":"MD201",
-    "T_INI":"MD202",
-    "T_FIN":"MD203",
-    "VELOCITA":"MD204",
-    "SOSTA_MIN":"MD205",
-    "ERRORE_T":"MD206",
-    "TEMP_C":"MD207",
-    "MINUTI_SOSTA":"MD208",
-    "T_TARGET":"MD209",
-    "PWM_PERCENT":"MD210",
-    "MINUTI_FASE":"MD211",
-    "MINUTI_TOTALI":"MD212",
-    "TEMP_PREC":"MD213",
-    "VEL_REALE":"MD214"
+    "FASE":              "MB200",
+    "PWM_SV":            "MD201",
+    "T_INI":             "MD202",
+    "T_FIN":             "MD203",
+    "VELOCITA":          "MD204",
+    "SOSTA_MIN":         "MD205",
+    "ERRORE_T":          "MD206",
+    "TEMP_C":            "MD207",
+    "MINUTI_SOSTA":      "MD208",
+    "T_TARGET":          "MD209",
+    "PWM_PERCENT":       "MD210",
+    "MINUTI_FASE":       "MD211",
+    "MINUTI_TOTALI":     "MD212",
+    "TEMP_PREC":         "MD213",
+    "VEL_REALE":         "MD214",
+    "TIMEOUT_MIN":       "MD215",
+    "KP_INV":            "MD216",
+    "FILTERED_TEMP":     "MD248"
   },
 
   "RECIPE_FASE1": {
-    "F1_TINI":"MD220",
-    "F1_TFIN":"MD221",
-    "F1_VEL":"MD222",
-    "F1_SOSTA":"MD223"
+    "F1_TINI":  "MD220",
+    "F1_TFIN":  "MD221",
+    "F1_VEL":   "MD222",
+    "F1_SOSTA": "MD223"
   },
   "RECIPE_FASE2": {
-    "F2_TINI":"MD224",
-    "F2_TFIN":"MD225",
-    "F2_VEL":"MD226",
-    "F2_SOSTA":"MD227"
+    "F2_TINI":  "MD224",
+    "F2_TFIN":  "MD225",
+    "F2_VEL":   "MD226",
+    "F2_SOSTA": "MD227"
   },
   "RECIPE_FASE3": {
-    "F3_TINI":"MD228",
-    "F3_TFIN":"MD229",
-    "F3_VEL":"MD230",
-    "F3_SOSTA":"MD231"
+    "F3_TINI":  "MD228",
+    "F3_TFIN":  "MD229",
+    "F3_VEL":   "MD230",
+    "F3_SOSTA": "MD231"
   },
   "RECIPE_FASE4": {
-    "F4_TINI":"MD232",
-    "F4_TFIN":"MD233",
-    "F4_VEL":"MD234",
-    "F4_SOSTA":"MD235"
+    "F4_TINI":  "MD232",
+    "F4_TFIN":  "MD233",
+    "F4_VEL":   "MD234",
+    "F4_SOSTA": "MD235"
   },
   "RECIPE_FASE5": {
-    "F5_TINI":"MD236",
-    "F5_TFIN":"MD237",
-    "F5_VEL":"MD238",
-    "F5_SOSTA":"MD239"
+    "F5_TINI":  "MD236",
+    "F5_TFIN":  "MD237",
+    "F5_VEL":   "MD238",
+    "F5_SOSTA": "MD239"
   },
   "RECIPE_FASE6": {
-    "F6_TINI":"MD240",
-    "F6_TFIN":"MD241",
-    "F6_VEL":"MD242",
-    "F6_SOSTA":"MD243"
-  },
-  "RECIPE_FASE7": {
-    "F7_TINI":"MD244",
-    "F7_TFIN":"MD245",
-    "F7_VEL":"MD246",
-    "F7_SOSTA":"MD247"
+    "F6_TINI":  "MD240",
+    "F6_TFIN":  "MD241",
+    "F6_VEL":   "MD242",
+    "F6_SOSTA": "MD243"
   },
 
   "IO": {
-    "TEMP_PV":"IA1",
-    "PWM_OUT":"PW01"
+    "TEMP_PV": "IA2",
+    "PWM_OUT": "PW01"
   }
 }

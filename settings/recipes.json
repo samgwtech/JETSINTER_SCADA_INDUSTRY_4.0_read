@@ -1,9 +1,9 @@
 {
   "default": {
-    "name": "Maverik SHT",
+    "name": "Maverik D4",
     "phases": [
       {
-        "t_ini": 20,
+        "t_ini": 650,
         "t_fin": 800,
         "vel": 23,
         "sosta": 10
@@ -37,12 +37,6 @@
         "t_fin": 1500,
         "vel": 4,
         "sosta": 50
-      },
-      {
-        "t_ini": 1500,
-        "t_fin": 0,
-        "vel": 0,
-        "sosta": 0
       }
     ]
   },
@@ -50,7 +44,7 @@
     "name": "Custom",
     "phases": [
       {
-        "t_ini": 69,
+        "t_ini": 650,
         "t_fin": 800,
         "vel": 23,
         "sosta": 10
@@ -84,12 +78,6 @@
         "t_fin": 1500,
         "vel": 4,
         "sosta": 50
-      },
-      {
-        "t_ini": 1500,
-        "t_fin": 0,
-        "vel": 0,
-        "sosta": 0
       }
     ]
   }

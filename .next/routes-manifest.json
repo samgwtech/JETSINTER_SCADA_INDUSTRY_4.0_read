@@ -54,64 +54,16 @@
       "namedRegex": "^/api/influx(?:/)?$"
     },
     {
-      "page": "/api/jetsinter",
-      "regex": "^/api/jetsinter(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/api/jetsinter(?:/)?$"
-    },
-    {
-      "page": "/api/jetsinter-status",
-      "regex": "^/api/jetsinter\\-status(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/api/jetsinter\\-status(?:/)?$"
-    },
-    {
       "page": "/api/plc",
       "regex": "^/api/plc(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/api/plc(?:/)?$"
     },
     {
-      "page": "/api/python/jetsinter",
-      "regex": "^/api/python/jetsinter(?:/)?$",
+      "page": "/api/python",
+      "regex": "^/api/python(?:/)?$",
       "routeKeys": {},
-      "namedRegex": "^/api/python/jetsinter(?:/)?$"
-    },
-    {
-      "page": "/api/python/jetsinterOff",
-      "regex": "^/api/python/jetsinterOff(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/api/python/jetsinterOff(?:/)?$"
-    },
-    {
-      "page": "/api/python/start",
-      "regex": "^/api/python/start(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/api/python/start(?:/)?$"
-    },
-    {
-      "page": "/api/python/stop",
-      "regex": "^/api/python/stop(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/api/python/stop(?:/)?$"
-    },
-    {
-      "page": "/api/python/training",
-      "regex": "^/api/python/training(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/api/python/training(?:/)?$"
-    },
-    {
-      "page": "/api/recipe",
-      "regex": "^/api/recipe(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/api/recipe(?:/)?$"
-    },
-    {
-      "page": "/api/update-env",
-      "regex": "^/api/update\\-env(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/api/update\\-env(?:/)?$"
+      "namedRegex": "^/api/python(?:/)?$"
     }
   ],
   "dataRoutes": [],

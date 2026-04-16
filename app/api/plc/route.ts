@@ -11,22 +11,34 @@ const HEADERS  = { Authorization: `Bearer ${APIKEY}` };
 
 const RECIPES_PATH = path.join(process.cwd(), "settings", "recipes.json");
 
+// Helper: fetch verso il PLC senza timeout — si risolve quando il PLC risponde.
+// Il request storm è gestito dal isPolling guard in page.tsx.
+function plcFetch(url: string, init?: RequestInit): Promise<Response> {
+  return fetch(url, init);
+}
+
 // GET /api/plc?op=M&index=2
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const op    = searchParams.get("op");
   const index = searchParams.get("index");
 
-  // GET /api/plc?op=recipes  → ritorna il JSON ricette
+  // GET /api/plc?op=recipes → ritorna il JSON ricette (nessuna chiamata al PLC)
   if (op === "recipes") {
-    const raw  = fs.readFileSync(RECIPES_PATH, "utf-8");
+    const raw = fs.readFileSync(RECIPES_PATH, "utf-8");
     return NextResponse.json(JSON.parse(raw));
   }
 
   console.log(`GET request for op=${op} index=${index}`);
-  const res  = await fetch(`${PLC_BASE}/api/get/data?elm=${op}(${index})`, { headers: HEADERS });
-  const data = await res.json();
-  return NextResponse.json(data);
+
+  try {
+    const res  = await plcFetch(`${PLC_BASE}/api/get/data?elm=${op}(${index})`, { headers: HEADERS });
+    const data = await res.json();
+    return NextResponse.json(data);
+  } catch (err) {
+    console.warn(`PLC GET error (op=${op} index=${index}):`, err);
+    return NextResponse.json({ error: "plc_unreachable" }, { status: 503 });
+  }
 }
 
 // POST /api/plc
@@ -37,13 +49,19 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { action } = body;
 
-  // --- Singolo SET (comportamento precedente) ---
+  // --- Singolo SET ---
   if (!action || action === "set") {
     const { op, index, value } = body;
-    const res = await fetch(`${PLC_BASE}/api/set/op?op=${op}&index=${index}&val=${value}`, {
-      headers: HEADERS,
-    });
-    return NextResponse.json({ ok: res.ok, status: res.status });
+    try {
+      const res = await plcFetch(
+        `${PLC_BASE}/api/set/op?op=${op}&index=${index}&val=${value}`,
+        { headers: HEADERS }
+      );
+      return NextResponse.json({ ok: res.ok, status: res.status });
+    } catch (err) {
+      console.warn(`PLC SET error (op=${op} index=${index}):`, err);
+      return NextResponse.json({ ok: false, error: "plc_unreachable" }, { status: 503 });
+    }
   }
 
   // --- Scrivi ricetta nel PLC (update + opzionale save) ---
@@ -54,21 +72,25 @@ export async function POST(req: NextRequest) {
 
     // MD220-247: ogni fase occupa 4 MD (t_ini, t_fin, vel, sosta)
     const writes = phases.flatMap((p, i) => [
-      { index: 220 + i * 4,     value: p.t_ini  },
-      { index: 220 + i * 4 + 1, value: p.t_fin  },
-      { index: 220 + i * 4 + 2, value: p.vel    },
-      { index: 220 + i * 4 + 3, value: p.sosta  },
+      { index: 220 + i * 4,     value: p.t_ini },
+      { index: 220 + i * 4 + 1, value: p.t_fin },
+      { index: 220 + i * 4 + 2, value: p.vel   },
+      { index: 220 + i * 4 + 3, value: p.sosta },
     ]);
 
-    // Scrivi tutte le MD nel PLC in parallelo
-    await Promise.all(writes.map(({ index, value }) =>
-      fetch(`${PLC_BASE}/api/set/op?op=MD&index=${index}&val=${value}`, { headers: HEADERS })
-    ));
+    try {
+      await Promise.all(writes.map(({ index, value }) =>
+        plcFetch(`${PLC_BASE}/api/set/op?op=MD&index=${index}&val=${value}`, { headers: HEADERS })
+      ));
+    } catch (err) {
+      console.warn("PLC recipe write error:", err);
+      return NextResponse.json({ ok: false, error: "plc_unreachable" }, { status: 503 });
+    }
 
     // Se save_recipe → salva anche nel JSON
     if (action === "save_recipe") {
-      const raw      = fs.readFileSync(RECIPES_PATH, "utf-8");
-      const recipes  = JSON.parse(raw);
+      const raw     = fs.readFileSync(RECIPES_PATH, "utf-8");
+      const recipes = JSON.parse(raw);
       recipes.custom = { name: "Custom", phases };
       fs.writeFileSync(RECIPES_PATH, JSON.stringify(recipes, null, 2));
     }

@@ -25,8 +25,13 @@ INFLUXDB_ORG    = os.getenv("INFLUXDB_ORG",    "jetsinter")
 INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET", "measurements")
 MACHINE_ID      = os.getenv("MACHINE_ID",      "machine_01")
 
+# -----------------------------------------------------------------------
+# InfluxDB field mapping
+# FILTERED_TEMP (MD248) = temperatura filtrata usata dal controllo
+# TEMP_C (MD207) = temperatura grezza pre-filtro (non usata qui)
+# -----------------------------------------------------------------------
 INFLUX_FIELDS = {
-    "temperature":     ("TEMP_C",        float),
+    "temperature":     ("FILTERED_TEMP", float),
     "mw_power":        ("PWM_PERCENT",   float),
     "elapsed_minutes": ("MINUTI_TOTALI", float),
     "machine_state":   ("START",         int),
@@ -55,9 +60,25 @@ sleep_interval = 1
 
 # -----------------------------------------------------------------------
 # GET URLs
+#
+# GET_URL_1: bit markers M1,M2,M4,M5 + MB200 (FASE) + MD201-216
+#   M1  = SOSTA_ATTIVA
+#   M2  = START
+#   M4  = TRANSFORMER_MODE
+#   M5  = ALLARME_TIMEOUT
+#   MB200       = FASE
+#   MD201-214   = variabili runtime (PWM_SV, T_INI, T_FIN, ...)
+#   MD215       = TIMEOUT_MIN
+#   MD216       = KP_INV
+#
+# GET_URL_2: ricetta retentiva MD220-247 (6 fasi)
+#
+# GET_URL_3: FILTERED_TEMP MD248
+#   Separato perché MD248 è fuori dalla range MD201-216
 # -----------------------------------------------------------------------
-GET_URL_1 = "https://192.168.151.100/api/get/data?elm=M(1)+M(2)+MB(200,200)+MD(201,214)"
+GET_URL_1 = "https://192.168.151.100/api/get/data?elm=M(1)+M(2)+M(4)+M(5)+MB(200,200)+MD(201,216)"
 GET_URL_2 = "https://192.168.151.100/api/get/data?elm=MD(220,247)"
+GET_URL_3 = "https://192.168.151.100/api/get/data?elm=MD(248,248)"
 
 # -----------------------------------------------------------------------
 # Decoder base64 -> {indice: valore}
@@ -110,15 +131,14 @@ file_name  = start_time.strftime("csv/%Y-%m-%d_%H-%M-%S_ZIRCONIA_SINTERIZATION.c
 
 with open(file_name, mode='w', newline='') as file:
     writer = csv.writer(file)
-    # CSV header
     writer.writerow([
         "START",
         "ELAPSED_MINUTES",
         "FASE",
-        "TEMP_C",
+        "FILTERED_TEMP",
         "T_INI",
         "T_FIN",
-        "VELOCITA_NECESSARIA",
+        "VELOCITA",
         "SOSTA_MIN",
     ])
 
@@ -126,7 +146,7 @@ with open("csv/LATEST.txt", mode='w') as f:
     f.write(file_name)
 
 # -----------------------------------------------------------------------
-# Session — riusa connessione TCP (keep-alive), calcolata una volta
+# Session — riusa connessione TCP (keep-alive)
 # -----------------------------------------------------------------------
 session = requests.Session()
 session.verify = False
@@ -144,19 +164,22 @@ while (datetime.now() - start_time).total_seconds() < DURATION_OF_MEASUREMENT:
         print("========= API REQUEST")
         print("=========", GET_URL_1)
         print("=========", GET_URL_2)
+        print("=========", GET_URL_3)
         print(f"========= {current_time_str} -> Sending request to PLC...")
         print("==========================================================================")
 
         response1 = session.get(GET_URL_1, timeout=20)
         response2 = session.get(GET_URL_2, timeout=20)
+        response3 = session.get(GET_URL_3, timeout=20)
 
-        if response1.status_code == 200 and response2.status_code == 200:
+        if response1.status_code == 200 and response2.status_code == 200 and response3.status_code == 200:
             operands1 = response1.json().get("OPERANDS", {})
             operands2 = response2.json().get("OPERANDS", {})
+            operands3 = response3.json().get("OPERANDS", {})
 
-            # Merge operands da entrambe le risposte
+            # Merge operands da tutte e tre le risposte
             merged = defaultdict(list)
-            for op in [operands1, operands2]:
+            for op in [operands1, operands2, operands3]:
                 for key, val in op.items():
                     merged[key].extend(val)
 
@@ -179,15 +202,14 @@ while (datetime.now() - start_time).total_seconds() < DURATION_OF_MEASUREMENT:
             # CSV
             with open(file_name, mode='a', newline='') as file:
                 writer = csv.writer(file)
-                # CSV data row
                 writer.writerow([
                     readings.get("START"),
                     readings.get("MINUTI_TOTALI"),
                     readings.get("FASE"),
-                    readings.get("TEMP_C"),
+                    readings.get("FILTERED_TEMP"),
                     readings.get("T_INI"),
                     readings.get("T_FIN"),
-                    readings.get("VELOCITA_NECESSARIA"),
+                    readings.get("VELOCITA"),
                     readings.get("SOSTA_MIN"),
                 ])
             print(f"{current_time_str} -> Data logged to CSV successfully")
@@ -209,6 +231,7 @@ while (datetime.now() - start_time).total_seconds() < DURATION_OF_MEASUREMENT:
         else:
             print(f"{current_time_str} -> RESPONSE 1 -> HTTP {response1.status_code}: {response1.text}")
             print(f"{current_time_str} -> RESPONSE 2 -> HTTP {response2.status_code}: {response2.text}")
+            print(f"{current_time_str} -> RESPONSE 3 -> HTTP {response3.status_code}: {response3.text}")
 
     except Exception as e:
         print(f"{current_time_str} -> Request failed: {e}")
