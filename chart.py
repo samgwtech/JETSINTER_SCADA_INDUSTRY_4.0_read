@@ -28,15 +28,15 @@ MACHINE_ID      = os.getenv("MACHINE_ID",      "machine_01")
 # -----------------------------------------------------------------------
 # InfluxDB field mapping
 # FILTERED_TEMP (MD248) = temperatura filtrata usata dal controllo
-# TEMP_C (MD207) = temperatura grezza pre-filtro (non usata qui)
+# T_TARGET      (MD209) = setpoint mobile della rampa
 # -----------------------------------------------------------------------
 INFLUX_FIELDS = {
     "temperature":     ("FILTERED_TEMP", float),
+    "t_target":        ("T_TARGET",      float),
     "mw_power":        ("PWM_PERCENT",   float),
     "elapsed_minutes": ("MINUTI_TOTALI", float),
     "machine_state":   ("START",         int),
     "fase":            ("FASE",          int),
-    "t_target":        ("T_TARGET",      float),
 }
 
 influx_client = InfluxDBClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG)
@@ -54,7 +54,7 @@ with open("settings/ips.json") as f:
 
 IP_TO_BE_USED = os.getenv("IP_ADDRESS", ips_json["use"])
 APIKEY = os.getenv("API_SECRET_KEY", "your_api_key_here")
-DURATION_OF_MEASUREMENT = 25 * 60  # seconds
+DURATION_OF_MEASUREMENT = 253 * 60  # seconds
 
 sleep_interval = 1
 
@@ -67,7 +67,7 @@ sleep_interval = 1
 #   M4  = TRANSFORMER_MODE
 #   M5  = ALLARME_TIMEOUT
 #   MB200       = FASE
-#   MD201-214   = variabili runtime (PWM_SV, T_INI, T_FIN, ...)
+#   MD201-214   = variabili runtime (PWM_SV, T_INI, T_FIN, T_TARGET ...)
 #   MD215       = TIMEOUT_MIN
 #   MD216       = KP_INV
 #
@@ -136,6 +136,7 @@ with open(file_name, mode='w', newline='') as file:
         "ELAPSED_MINUTES",
         "FASE",
         "FILTERED_TEMP",
+        "T_TARGET",       # MD209 — setpoint mobile della rampa
         "T_INI",
         "T_FIN",
         "VELOCITA",
@@ -207,6 +208,7 @@ while (datetime.now() - start_time).total_seconds() < DURATION_OF_MEASUREMENT:
                     readings.get("MINUTI_TOTALI"),
                     readings.get("FASE"),
                     readings.get("FILTERED_TEMP"),
+                    readings.get("T_TARGET"),     # MD209 — setpoint mobile
                     readings.get("T_INI"),
                     readings.get("T_FIN"),
                     readings.get("VELOCITA"),

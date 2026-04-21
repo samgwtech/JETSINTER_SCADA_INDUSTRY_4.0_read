@@ -12,13 +12,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className="antialiased bg-background text-foreground min-h-screen flex flex-col">
+      <body className="antialiased bg-background text-foreground h-screen flex flex-col overflow-hidden">
         {/* Top navbar */}
-        <header className="shrink-0 h-12 flex items-center px-5 border-b border-border bg-sidebar">
-          <span className="text-xs font-bold tracking-[0.2em] uppercase neon-text">
+        <header className="shrink-0 h-12 flex items-center px-6 border-b border-border bg-sidebar">
+          <span className="text-sm font-bold tracking-[0.2em] uppercase neon-text">
             Jetsinter
           </span>
-          <span className="ml-2 text-xs font-semibold tracking-widest uppercase text-muted-foreground">
+          <span className="ml-2 text-sm font-semibold tracking-widest uppercase text-muted-foreground">
             — PLC Dashboard
           </span>
           <div className="ml-auto flex items-center gap-2">
@@ -27,7 +27,8 @@ export default function RootLayout({
           </div>
         </header>
 
-        <div className="flex-1 overflow-hidden">
+        {/* Full remaining height, no scroll on root */}
+        <div className="flex-1 min-h-0">
           {children}
         </div>
       </body>
